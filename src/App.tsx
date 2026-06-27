@@ -6,9 +6,11 @@ import { ItemCard } from './components/ItemCard'
 import { Carrinho } from './components/Carrinho'
 import { Toast } from './components/Toast'
 import { Bandeirinhas } from './components/Bandeirinhas'
-import logoPng from './assets/logo-sao-sebastiao.png'
-import logoWebp from './assets/logo-sao-sebastiao.webp'
+import logoPng from './assets/logo-santo.png'
+import logoWebp from './assets/logo-santo.webp'
 import type { Item } from './types'
+
+const CORES_CATEGORIA = ['#C0392B', '#E8B923', '#4E9A51', '#2E86C1', '#E67E22']
 
 function App() {
   const { mesa, carregando: carregandoMesa } = useMesa()
@@ -42,34 +44,47 @@ function App() {
 
   return (
     <div className="min-h-screen pb-28 bg-arraia-cream">
-      <header className="sticky top-0 z-20 bg-arraia-brown-dark text-arraia-cream shadow-md">
-        <div className="max-w-xl mx-auto px-4 pt-3 pb-2 flex flex-col items-center">
+      <header className="sticky top-0 z-20 bg-arraia-brown-dark shadow-md">
+        <div className="max-w-xl mx-auto px-4 pt-2 pb-1 flex items-center gap-3">
           <picture>
             <source srcSet={logoWebp} type="image/webp" />
             <img
               src={logoPng}
-              alt="136ª Festa em Louvor a São Sebastião — Paróquia N. Sra. da Conceição, Ipeúna/SP"
-              className="block w-full max-w-[360px] h-auto"
-              width={720}
-              height={960}
+              alt="São Sebastião"
+              className="block h-[72px] sm:h-[96px] w-auto shrink-0"
+              width={240}
+              height={250}
               decoding="async"
             />
           </picture>
-          <div className="mt-2 mb-1">
-            {carregandoMesa ? (
-              <span className="text-xs opacity-80">…</span>
-            ) : mesa ? (
-              <span className="inline-block bg-arraia-gold text-arraia-brown-dark font-bold px-4 py-1 rounded-full text-sm shadow">
-                Mesa {mesa.numero}
-              </span>
-            ) : (
-              <span className="inline-block bg-arraia-cream/90 text-arraia-brown-dark font-semibold px-3 py-1 rounded-full text-xs">
-                Modo balcão
-              </span>
-            )}
+          <div className="min-w-0 flex-1">
+            <h1
+              className="text-arraia-cream font-bold leading-tight text-[20px] sm:text-[24px]"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+            >
+              São Sebastião
+            </h1>
+            <p className="text-arraia-gold text-[11px] sm:text-xs leading-snug mt-0.5">
+              Paróquia N. S. da Conceição – Ipeúna/SP
+              <br />
+              <span className="opacity-90">18, 19, 25 e 26 de Julho</span>
+            </p>
           </div>
         </div>
         <Bandeirinhas />
+        <div className="max-w-xl mx-auto px-4 flex justify-end -mt-2 pb-1.5">
+          {carregandoMesa ? (
+            <span className="text-[10px] text-arraia-cream/70">…</span>
+          ) : mesa ? (
+            <span className="inline-block bg-arraia-gold text-arraia-brown-dark font-bold px-3 py-0.5 rounded-full text-xs shadow border border-arraia-gold-dark">
+              Mesa {mesa.numero}
+            </span>
+          ) : (
+            <span className="inline-block bg-arraia-cream text-arraia-brown-dark font-semibold px-3 py-0.5 rounded-full text-[11px] shadow">
+              Modo balcão
+            </span>
+          )}
+        </div>
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-4">
@@ -92,10 +107,16 @@ function App() {
         )}
 
         <div className="space-y-6">
-          {categorias.map((cat) => (
+          {categorias.map((cat, idx) => (
             <section key={cat.id}>
               <h2 className="text-xl font-bold text-arraia-brown-dark mb-2 flex items-center gap-2">
-                <span className="inline-block w-2 h-6 bg-arraia-gold rounded-sm" />
+                <span
+                  className="inline-block w-1.5 h-6 rounded-sm"
+                  style={{
+                    backgroundColor:
+                      CORES_CATEGORIA[idx % CORES_CATEGORIA.length],
+                  }}
+                />
                 {cat.nome}
               </h2>
               <div className="space-y-3">

@@ -32,7 +32,7 @@ export function Carrinho({
           'fixed bottom-4 left-4 right-4 z-30 rounded-full px-5 py-3 shadow-lg flex items-center justify-between gap-3 transition border-2 ' +
           (vazio
             ? 'bg-gray-300 text-gray-500 border-gray-300'
-            : 'bg-arraia-red text-arraia-cream border-arraia-gold active:scale-[0.98]')
+            : 'bg-arraia-brown-dark text-arraia-cream border-arraia-gold active:scale-[0.98]')
         }
       >
         <span className="flex items-center gap-2 font-semibold">
@@ -41,7 +41,7 @@ export function Carrinho({
           </span>
           Ver carrinho
         </span>
-        <span className="font-bold">{formatBRL(total)}</span>
+        <span className="font-bold text-arraia-gold">{formatBRL(total)}</span>
       </button>
 
       {aberto && (

@@ -73,8 +73,24 @@ export function useCardapio() {
     }
 
     carregar()
+
+    const canal = supabase
+      .channel('cardapio-disponibilidade')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'itens' },
+        () => carregar()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'item_variacoes' },
+        () => carregar()
+      )
+      .subscribe()
+
     return () => {
       cancelado = true
+      supabase.removeChannel(canal)
     }
   }, [])
 

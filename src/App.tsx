@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Cozinha from './pages/Cozinha'
 import Admin from './pages/Admin'
 import AdminVincularSetores from './pages/AdminVincularSetores'
+import Disponibilidade from './pages/Disponibilidade'
 import Checkout from './pages/Checkout'
 import SemAcesso from './pages/SemAcesso'
 
@@ -33,6 +34,15 @@ export default function App() {
             element={
               <RotaProtegida papeisPermitidos={['admin']}>
                 <Admin />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/disponibilidade"
+            element={
+              <RotaProtegida papeisPermitidos={['cozinha', 'admin']}>
+                <Disponibilidade />
               </RotaProtegida>
             }
           />

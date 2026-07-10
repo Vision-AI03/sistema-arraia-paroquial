@@ -70,6 +70,19 @@ export type PedidoSetor = {
   status: StatusPedido
   subtotal: number
   retirado_em: string | null
+  atualizado_em?: string
+}
+
+export type PedidoItem = {
+  id: string
+  pedido_setor_id: string
+  item_id: string
+  variacao_id: string | null
+  nome_snapshot: string
+  variacao_snapshot: string | null
+  preco_unitario: number
+  quantidade: number
+  observacao: string | null
 }
 
 export type Papel = 'cozinha' | 'admin'

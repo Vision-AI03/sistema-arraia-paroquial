@@ -16,6 +16,12 @@ const CARDS: Card[] = [
     pronto: true,
   },
   {
+    para: '/disponibilidade',
+    titulo: 'Disponibilidade',
+    descricao: 'Esgotar ou religar itens e sabores do cardápio.',
+    pronto: true,
+  },
+  {
     para: '/admin/faturamento',
     titulo: 'Faturamento em tempo real',
     descricao: 'Total do dia, ticket médio e faturamento por setor.',

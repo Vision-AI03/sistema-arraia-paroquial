@@ -9,7 +9,7 @@ import { Bandeirinhas } from '../components/Bandeirinhas'
 import { supabase } from '../lib/supabase'
 import logoPng from '../assets/logo-santo.png'
 import logoWebp from '../assets/logo-santo.webp'
-import type { Item, ItemVariacao } from '../types'
+import type { Item } from '../types'
 
 const CORES_CATEGORIA = ['#C0392B', '#E8B923', '#4E9A51', '#2E86C1', '#E67E22']
 
@@ -21,33 +21,25 @@ export default function Cardapio() {
   const [toast, setToast] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
-  function handleAdicionar(item: Item, variacao: ItemVariacao | null) {
+  function handleAdicionar(item: Item) {
     if (!item.disponivel) return
-    adicionar(item, variacao)
-    const nomeExibido = variacao ? `${item.nome} (${variacao.nome})` : item.nome
-    setToast(`${nomeExibido} adicionado`)
+    adicionar(item)
+    setToast(`${item.nome} adicionado`)
   }
 
-  function reAdicionar(item_id: string, variacao_id: string | null) {
-    const atual = itens.find(
-      (i) => i.item_id === item_id && i.variacao_id === variacao_id
-    )
+  function reAdicionar(item_id: string) {
+    const atual = itens.find((i) => i.item_id === item_id)
     if (!atual) return
-    adicionar(
-      {
-        id: atual.item_id,
-        nome: atual.nome,
-        preco: atual.preco,
-        categoria_id: '',
-        descricao: null,
-        disponivel: true,
-        alcoolico: false,
-        ordem: 0,
-      },
-      variacao_id
-        ? { id: variacao_id, item_id, nome: atual.variacao_nome ?? '', disponivel: true, ordem: 0 }
-        : null
-    )
+    adicionar({
+      id: atual.item_id,
+      nome: atual.nome,
+      preco: atual.preco,
+      categoria_id: '',
+      descricao: null,
+      disponivel: true,
+      alcoolico: false,
+      ordem: 0,
+    })
   }
 
   async function handleFinalizar() {
@@ -56,7 +48,6 @@ export default function Cardapio() {
     const payload = {
       itens: itens.map((i) => ({
         item_id: i.item_id,
-        variacao_id: i.variacao_id,
         quantidade: i.quantidade,
       })),
     }

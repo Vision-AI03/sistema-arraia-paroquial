@@ -8,7 +8,7 @@ import {
   useCozinha,
   type CardKDS,
 } from '../hooks/useCozinha'
-import type { PedidoItem, Setor, StatusPedido } from '../types'
+import type { ItemVariacao, PedidoItem, Setor, StatusPedido } from '../types'
 
 const COLUNAS: { status: StatusPedido; titulo: string; acao: string }[] = [
   { status: 'recebido', titulo: 'Recebidos', acao: 'Iniciar preparo' },
@@ -20,7 +20,7 @@ const FILTRO_KEY = 'cozinha:setor'
 
 export default function Cozinha() {
   const { perfil, sair } = useAuth()
-  const { cards, setores, carregando, erro } = useCozinha()
+  const { cards, setores, variacoesPorItem, carregando, erro } = useCozinha()
   const [setorId, setSetorId] = useState<string>(
     () => localStorage.getItem(FILTRO_KEY) ?? 'todos'
   )
@@ -113,6 +113,7 @@ export default function Cozinha() {
                 status={col.status}
                 cards={porColuna[col.status]}
                 setoresPorId={setoresPorId}
+                variacoesPorItem={variacoesPorItem}
                 agora={agora}
               />
             ))}
@@ -129,6 +130,7 @@ function Coluna({
   status,
   cards,
   setoresPorId,
+  variacoesPorItem,
   agora,
 }: {
   titulo: string
@@ -136,6 +138,7 @@ function Coluna({
   status: StatusPedido
   cards: CardKDS[]
   setoresPorId: Map<string, Setor>
+  variacoesPorItem: Record<string, ItemVariacao[]>
   agora: number
 }) {
   return (
@@ -157,6 +160,7 @@ function Coluna({
             key={c.sub.id}
             card={c}
             setor={setoresPorId.get(c.sub.setor_id)}
+            variacoesPorItem={variacoesPorItem}
             acao={acao}
             status={status}
             agora={agora}
@@ -170,18 +174,21 @@ function Coluna({
 function Cartao({
   card,
   setor,
+  variacoesPorItem,
   acao,
   status,
   agora,
 }: {
   card: CardKDS
   setor: Setor | undefined
+  variacoesPorItem: Record<string, ItemVariacao[]>
   acao: string
   status: StatusPedido
   agora: number
 }) {
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [menuAberto, setMenuAberto] = useState<string | null>(null)
   const cor = setor?.cor ?? '#4E342E'
 
   const minutos = card.criado_em
@@ -198,20 +205,17 @@ function Cartao({
     if (e) setErro(e)
   }
 
-  async function onEsgotar(it: PedidoItem) {
-    if (it.variacao_id && it.variacao_snapshot) {
-      if (
-        !confirm(
-          `Esgotar apenas o sabor "${it.variacao_snapshot}" de ${it.nome_snapshot}?`
-        )
-      )
-        return
-      const { erro: e } = await esgotarVariacao(it.variacao_id)
-      if (e) setErro(e)
-      return
-    }
+  async function onEsgotarItem(it: PedidoItem) {
     if (!confirm(`Esgotar "${it.nome_snapshot}" no cardápio?`)) return
+    setMenuAberto(null)
     const { erro: e } = await esgotarItem(it.item_id)
+    if (e) setErro(e)
+  }
+
+  async function onEsgotarSabor(v: ItemVariacao, nomeItem: string) {
+    if (!confirm(`Esgotar apenas o sabor "${v.nome}" de ${nomeItem}?`)) return
+    setMenuAberto(null)
+    const { erro: e } = await esgotarVariacao(v.id)
     if (e) setErro(e)
   }
 
@@ -243,41 +247,71 @@ function Cartao({
       </div>
 
       <ul className="mt-2 space-y-1 text-sm">
-        {card.itens.map((it) => (
-          <li
-            key={it.id}
-            className="flex items-start justify-between gap-2 border-b border-arraia-cream last:border-0 pb-1"
-          >
-            <div>
-              <p className="text-arraia-brown-dark">
-                <span className="font-bold">{it.quantidade}×</span>{' '}
-                {it.nome_snapshot}
-                {it.variacao_snapshot && (
-                  <span className="text-arraia-brown/60">
-                    {' '}
-                    ({it.variacao_snapshot})
-                  </span>
-                )}
-              </p>
-              {it.observacao && (
-                <p className="text-[11px] text-arraia-brown/60 italic">
-                  obs: {it.observacao}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => onEsgotar(it)}
-              title={
-                it.variacao_id
-                  ? `Esgotar sabor "${it.variacao_snapshot}"`
-                  : 'Esgotar item no cardápio'
-              }
-              className="text-[10px] text-arraia-red hover:underline shrink-0"
+        {card.itens.map((it) => {
+          const variacoes = variacoesPorItem[it.item_id] ?? []
+          const menuId = it.id
+          const aberto = menuAberto === menuId
+          return (
+            <li
+              key={it.id}
+              className="border-b border-arraia-cream last:border-0 pb-1"
             >
-              {it.variacao_id ? 'esgotar sabor' : 'esgotar'}
-            </button>
-          </li>
-        ))}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-arraia-brown-dark">
+                    <span className="font-bold">{it.quantidade}×</span>{' '}
+                    {it.nome_snapshot}
+                    {it.variacao_snapshot && (
+                      <span className="text-arraia-brown/60">
+                        {' '}
+                        ({it.variacao_snapshot})
+                      </span>
+                    )}
+                  </p>
+                  {it.observacao && (
+                    <p className="text-[11px] text-arraia-brown/60 italic">
+                      obs: {it.observacao}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setMenuAberto(aberto ? null : menuId)}
+                  title="Esgotar item ou sabor"
+                  className="text-[10px] text-arraia-red hover:underline shrink-0"
+                >
+                  esgotar ▾
+                </button>
+              </div>
+              {aberto && (
+                <div className="mt-1 ml-2 bg-arraia-cream/60 rounded p-2 space-y-1">
+                  <button
+                    onClick={() => onEsgotarItem(it)}
+                    className="block w-full text-left text-xs text-arraia-brown-dark hover:bg-arraia-cream rounded px-2 py-1"
+                  >
+                    Esgotar {it.nome_snapshot} inteiro
+                  </button>
+                  {variacoes
+                    .filter((v) => v.disponivel)
+                    .map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => onEsgotarSabor(v, it.nome_snapshot)}
+                        className="block w-full text-left text-xs text-arraia-brown-dark hover:bg-arraia-cream rounded px-2 py-1"
+                      >
+                        Esgotar sabor: <b>{v.nome}</b>
+                      </button>
+                    ))}
+                  <button
+                    onClick={() => setMenuAberto(null)}
+                    className="block w-full text-left text-[10px] text-arraia-brown/60 hover:bg-arraia-cream rounded px-2 py-1"
+                  >
+                    cancelar
+                  </button>
+                </div>
+              )}
+            </li>
+          )
+        })}
         {card.itens.length === 0 && (
           <li className="text-xs text-arraia-brown/50">carregando itens…</li>
         )}

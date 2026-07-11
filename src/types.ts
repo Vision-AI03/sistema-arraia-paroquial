@@ -37,8 +37,6 @@ export type Item = {
 
 export type CarrinhoItem = {
   item_id: string
-  variacao_id: string | null
-  variacao_nome: string | null
   nome: string
   preco: number
   quantidade: number

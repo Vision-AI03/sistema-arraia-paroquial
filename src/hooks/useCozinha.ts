@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { PedidoItem, PedidoSetor, Setor, StatusPedido } from '../types'
+import type {
+  ItemVariacao,
+  PedidoItem,
+  PedidoSetor,
+  Setor,
+  StatusPedido,
+} from '../types'
 
 const STATUS_ATIVOS: StatusPedido[] = ['recebido', 'preparando', 'pronto']
 
@@ -13,6 +19,7 @@ export type CardKDS = {
 export type EstadoCozinha = {
   cards: CardKDS[]
   setores: Setor[]
+  variacoesPorItem: Record<string, ItemVariacao[]>
   carregando: boolean
   erro: string | null
 }
@@ -22,6 +29,9 @@ export function useCozinha() {
   const [itensPorSub, setItensPorSub] = useState<Record<string, PedidoItem[]>>({})
   const [criadoEmPorPedido, setCriadoEmPorPedido] = useState<Record<string, string>>({})
   const [setores, setSetores] = useState<Setor[]>([])
+  const [variacoesPorItem, setVariacoesPorItem] = useState<
+    Record<string, ItemVariacao[]>
+  >({})
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -41,10 +51,30 @@ export function useCozinha() {
         return
       }
       const mapa: Record<string, PedidoItem[]> = {}
+      const itemIds = new Set<string>()
       for (const it of (data ?? []) as PedidoItem[]) {
         ;(mapa[it.pedido_setor_id] ??= []).push(it)
+        itemIds.add(it.item_id)
       }
       if (!cancelado) setItensPorSub((old) => ({ ...old, ...mapa }))
+      if (itemIds.size > 0) await fetchVariacoes([...itemIds])
+    }
+
+    async function fetchVariacoes(itemIds: string[]) {
+      const { data, error } = await supabase
+        .from('item_variacoes')
+        .select('id, item_id, nome, disponivel, ordem')
+        .in('item_id', itemIds)
+        .order('ordem')
+      if (error) {
+        console.error('[cozinha] variacoes:', error.message)
+        return
+      }
+      const mapa: Record<string, ItemVariacao[]> = {}
+      for (const v of (data ?? []) as ItemVariacao[]) {
+        ;(mapa[v.item_id] ??= []).push(v)
+      }
+      if (!cancelado) setVariacoesPorItem((old) => ({ ...old, ...mapa }))
     }
 
     async function fetchCriadoEm(pedidoIds: string[]) {
@@ -107,6 +137,23 @@ export function useCozinha() {
       .channel('cozinha-kds')
       .on(
         'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'item_variacoes' },
+        (p) => {
+          const novo = p.new as ItemVariacao
+          setVariacoesPorItem((old) => {
+            const lista = old[novo.item_id]
+            if (!lista) return old
+            return {
+              ...old,
+              [novo.item_id]: lista.map((v) =>
+                v.id === novo.id ? { ...v, disponivel: novo.disponivel } : v
+              ),
+            }
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'pedido_setores' },
         async (payload) => {
           const novo = payload.new as PedidoSetor | undefined
@@ -149,7 +196,13 @@ export function useCozinha() {
     [subs, itensPorSub, criadoEmPorPedido]
   )
 
-  return { cards, setores, carregando, erro } satisfies EstadoCozinha
+  return {
+    cards,
+    setores,
+    variacoesPorItem,
+    carregando,
+    erro,
+  } satisfies EstadoCozinha
 }
 
 export async function avancarStatus(

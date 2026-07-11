@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
+  ajustarEntregue,
   avancarStatus,
+  entregarTudo,
   esgotarItem,
   esgotarVariacao,
   useCozinha,
@@ -219,6 +221,28 @@ function Cartao({
     if (e) setErro(e)
   }
 
+  async function onAjustarEntregue(it: PedidoItem, delta: number) {
+    setErro(null)
+    const { erro: e } = await ajustarEntregue(it, delta)
+    if (e) setErro(e)
+  }
+
+  async function onEntregarTudo() {
+    if (!confirm('Marcar tudo como entregue e fechar o pedido?')) return
+    setOcupado(true)
+    setErro(null)
+    const { erro: e } = await entregarTudo(card.itens)
+    setOcupado(false)
+    if (e) setErro(e)
+  }
+
+  const emPronto = status === 'pronto'
+  const totalUnidades = card.itens.reduce((acc, it) => acc + it.quantidade, 0)
+  const totalEntregues = card.itens.reduce(
+    (acc, it) => acc + it.qtd_entregue,
+    0
+  )
+
   return (
     <article
       className="bg-white rounded-lg shadow-sm border-l-4 p-3"
@@ -257,9 +281,21 @@ function Cartao({
               className="border-b border-arraia-cream last:border-0 pb-1"
             >
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-arraia-brown-dark">
-                    <span className="font-bold">{it.quantidade}×</span>{' '}
+                <div className="min-w-0">
+                  <p
+                    className={
+                      it.qtd_entregue >= it.quantidade
+                        ? 'text-arraia-brown/50 line-through'
+                        : 'text-arraia-brown-dark'
+                    }
+                  >
+                    {emPronto ? (
+                      <span className="font-bold">
+                        {it.qtd_entregue}/{it.quantidade}×
+                      </span>
+                    ) : (
+                      <span className="font-bold">{it.quantidade}×</span>
+                    )}{' '}
                     {it.nome_snapshot}
                     {it.variacao_snapshot && (
                       <span className="text-arraia-brown/60">
@@ -274,13 +310,35 @@ function Cartao({
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => setMenuAberto(aberto ? null : menuId)}
-                  title="Esgotar item ou sabor"
-                  className="text-[10px] text-arraia-red hover:underline shrink-0"
-                >
-                  esgotar ▾
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {emPronto && (
+                    <>
+                      <button
+                        onClick={() => onAjustarEntregue(it, -1)}
+                        disabled={it.qtd_entregue <= 0}
+                        title="Desfazer entrega"
+                        className="w-7 h-7 rounded-full bg-arraia-cream border border-arraia-brown/30 text-arraia-brown-dark font-bold disabled:opacity-40"
+                      >
+                        −
+                      </button>
+                      <button
+                        onClick={() => onAjustarEntregue(it, +1)}
+                        disabled={it.qtd_entregue >= it.quantidade}
+                        title="Entregar 1 unidade"
+                        className="w-7 h-7 rounded-full bg-green-600 text-white font-bold shadow disabled:opacity-40"
+                      >
+                        +
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setMenuAberto(aberto ? null : menuId)}
+                    title="Esgotar item ou sabor"
+                    className="text-[10px] text-arraia-red hover:underline ml-1"
+                  >
+                    esgotar ▾
+                  </button>
+                </div>
               </div>
               {aberto && (
                 <div className="mt-1 ml-2 bg-arraia-cream/60 rounded p-2 space-y-1">
@@ -319,13 +377,33 @@ function Cartao({
 
       {erro && <p className="mt-2 text-xs text-arraia-red">{erro}</p>}
 
-      <button
-        onClick={onAvancar}
-        disabled={ocupado}
-        className="mt-3 w-full bg-arraia-brown-dark text-arraia-cream font-bold py-2 rounded-md disabled:opacity-60 text-sm"
-      >
-        {ocupado ? '...' : acao}
-      </button>
+      {emPronto && card.itens.length > 0 && (
+        <p className="mt-2 text-[11px] text-arraia-brown/70 text-center">
+          Retiradas: {totalEntregues} de {totalUnidades}
+        </p>
+      )}
+
+      {emPronto ? (
+        <button
+          onClick={onEntregarTudo}
+          disabled={ocupado || totalEntregues >= totalUnidades}
+          className="mt-2 w-full bg-arraia-brown-dark text-arraia-cream font-bold py-2 rounded-md disabled:opacity-60 text-sm"
+        >
+          {ocupado
+            ? '...'
+            : totalEntregues >= totalUnidades
+              ? 'Tudo entregue'
+              : 'Entregar tudo agora'}
+        </button>
+      ) : (
+        <button
+          onClick={onAvancar}
+          disabled={ocupado}
+          className="mt-3 w-full bg-arraia-brown-dark text-arraia-cream font-bold py-2 rounded-md disabled:opacity-60 text-sm"
+        >
+          {ocupado ? '...' : acao}
+        </button>
+      )}
     </article>
   )
 }

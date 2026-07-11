@@ -121,7 +121,7 @@ export function Carrinho({
                 Finalizar pedido
               </button>
               <p className="text-xs text-center text-arraia-brown/80">
-                Pagamento via Pix em breve.
+                Uma senha por barraca — dá pra retirar aos poucos.
               </p>
             </div>
           </div>

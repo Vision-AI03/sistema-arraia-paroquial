@@ -82,6 +82,7 @@ export type PedidoItem = {
   variacao_snapshot: string | null
   preco_unitario: number
   quantidade: number
+  qtd_entregue: number
   observacao: string | null
 }
 

@@ -27,7 +27,8 @@ const COR_STATUS: Record<StatusPedido, string> = {
 
 export default function Checkout() {
   const { pedidoId } = useParams<{ pedidoId: string }>()
-  const { pedido, subPedidos, setores, carregando, erro } = useCheckout(pedidoId)
+  const { pedido, subPedidos, itensPorSub, setores, carregando, erro } =
+    useCheckout(pedidoId)
   const [pagando, setPagando] = useState(false)
   const [erroSim, setErroSim] = useState<string | null>(null)
 
@@ -158,6 +159,17 @@ export default function Checkout() {
         <section className="space-y-3">
           {subOrdenados.map((sp) => {
             const setor = setoresPorId.get(sp.setor_id)
+            const itens = itensPorSub[sp.id] ?? []
+            const totalUnidades = itens.reduce(
+              (acc, it) => acc + it.quantidade,
+              0
+            )
+            const totalEntregues = itens.reduce(
+              (acc, it) => acc + it.qtd_entregue,
+              0
+            )
+            const mostrarRetirada =
+              pago && totalUnidades > 0 && sp.status !== 'cancelado'
             return (
               <div
                 key={sp.id}
@@ -191,6 +203,15 @@ export default function Checkout() {
                     {formatBRL(sp.subtotal)}
                   </p>
                 </div>
+
+                {mostrarRetirada && (
+                  <p className="mt-2 text-xs text-arraia-brown/70">
+                    Retirados:{' '}
+                    <span className="font-bold text-arraia-brown-dark">
+                      {totalEntregues} de {totalUnidades}
+                    </span>
+                  </p>
+                )}
               </div>
             )
           })}

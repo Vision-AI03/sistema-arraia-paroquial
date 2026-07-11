@@ -43,7 +43,7 @@ export function useCozinha() {
       const { data, error } = await supabase
         .from('pedido_itens')
         .select(
-          'id, pedido_setor_id, item_id, variacao_id, nome_snapshot, variacao_snapshot, preco_unitario, quantidade, observacao'
+          'id, pedido_setor_id, item_id, variacao_id, nome_snapshot, variacao_snapshot, preco_unitario, quantidade, qtd_entregue, observacao'
         )
         .in('pedido_setor_id', subIds)
       if (error) {
@@ -135,6 +135,23 @@ export function useCozinha() {
 
     const canal = supabase
       .channel('cozinha-kds')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pedido_itens' },
+        (p) => {
+          const novo = p.new as PedidoItem
+          setItensPorSub((old) => {
+            const lista = old[novo.pedido_setor_id]
+            if (!lista) return old
+            return {
+              ...old,
+              [novo.pedido_setor_id]: lista.map((it) =>
+                it.id === novo.id ? { ...it, qtd_entregue: novo.qtd_entregue } : it
+              ),
+            }
+          })
+        }
+      )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'item_variacoes' },
@@ -241,4 +258,31 @@ export async function esgotarVariacao(
     .update({ disponivel: false })
     .eq('id', variacaoId)
   return { erro: error?.message ?? null }
+}
+
+export async function ajustarEntregue(
+  it: PedidoItem,
+  delta: number
+): Promise<{ erro: string | null }> {
+  const novo = Math.max(0, Math.min(it.quantidade, it.qtd_entregue + delta))
+  if (novo === it.qtd_entregue) return { erro: null }
+  const { error } = await supabase
+    .from('pedido_itens')
+    .update({ qtd_entregue: novo })
+    .eq('id', it.id)
+  return { erro: error?.message ?? null }
+}
+
+export async function entregarTudo(
+  itens: PedidoItem[]
+): Promise<{ erro: string | null }> {
+  const alvo = itens.filter((it) => it.qtd_entregue < it.quantidade)
+  for (const it of alvo) {
+    const { error } = await supabase
+      .from('pedido_itens')
+      .update({ qtd_entregue: it.quantidade })
+      .eq('id', it.id)
+    if (error) return { erro: error.message }
+  }
+  return { erro: null }
 }

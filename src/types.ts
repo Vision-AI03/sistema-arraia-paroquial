@@ -83,7 +83,32 @@ export type PedidoItem = {
   preco_unitario: number
   quantidade: number
   qtd_entregue: number
+  qtd_cancelada: number
   observacao: string | null
+}
+
+export type ConfiguracaoAtendimento = {
+  data: string
+  abre: string
+  fecha: string
+  aberto_manual: boolean
+}
+
+export type StatusAtendimento = {
+  aberto: boolean
+  proxima_data: string | null
+  proxima_abre: string | null
+  fecha_hoje: string | null
+}
+
+export type PedidoComReembolso = {
+  pedido_id: string
+  criado_em: string
+  pago_em: string | null
+  valor_a_ressarcir: number
+  unidades_canceladas: number
+  resolvido: boolean
+  resolvido_em: string | null
 }
 
 export type Papel = 'cozinha' | 'admin'

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import {
   ajustarEntregue,
   avancarStatus,
+  cancelarUnidade,
   entregarTudo,
   esgotarItem,
   esgotarVariacao,
@@ -221,6 +222,20 @@ function Cartao({
     if (e) setErro(e)
   }
 
+  async function onCancelarUnidade(it: PedidoItem) {
+    const restante = it.quantidade - it.qtd_entregue - it.qtd_cancelada
+    if (restante <= 0) return
+    if (
+      !confirm(
+        `Cancelar 1× ${it.nome_snapshot}? Cliente será direcionado para ressarcimento.`
+      )
+    )
+      return
+    setMenuAberto(null)
+    const { erro: e } = await cancelarUnidade(it)
+    if (e) setErro(e)
+  }
+
   async function onAjustarEntregue(it: PedidoItem, delta: number) {
     setErro(null)
     const { erro: e } = await ajustarEntregue(it, delta)
@@ -284,7 +299,7 @@ function Cartao({
                 <div className="min-w-0">
                   <p
                     className={
-                      it.qtd_entregue >= it.quantidade
+                      it.qtd_entregue + it.qtd_cancelada >= it.quantidade
                         ? 'text-arraia-brown/50 line-through'
                         : 'text-arraia-brown-dark'
                     }
@@ -301,6 +316,11 @@ function Cartao({
                       <span className="text-arraia-brown/60">
                         {' '}
                         ({it.variacao_snapshot})
+                      </span>
+                    )}
+                    {it.qtd_cancelada > 0 && (
+                      <span className="ml-1 text-[10px] font-semibold text-arraia-red">
+                        · {it.qtd_cancelada} cancelado(s)
                       </span>
                     )}
                   </p>
@@ -323,7 +343,9 @@ function Cartao({
                       </button>
                       <button
                         onClick={() => onAjustarEntregue(it, +1)}
-                        disabled={it.qtd_entregue >= it.quantidade}
+                        disabled={
+                          it.qtd_entregue >= it.quantidade - it.qtd_cancelada
+                        }
                         title="Entregar 1 unidade"
                         className="w-7 h-7 rounded-full bg-green-600 text-white font-bold shadow disabled:opacity-40"
                       >
@@ -342,11 +364,20 @@ function Cartao({
               </div>
               {aberto && (
                 <div className="mt-1 ml-2 bg-arraia-cream/60 rounded p-2 space-y-1">
+                  {it.quantidade - it.qtd_entregue - it.qtd_cancelada > 0 && (
+                    <button
+                      onClick={() => onCancelarUnidade(it)}
+                      className="block w-full text-left text-xs text-arraia-red hover:bg-red-50 rounded px-2 py-1"
+                    >
+                      Cancelar 1× (esgotou — cliente será ressarcido)
+                    </button>
+                  )}
+                  <div className="border-t border-arraia-brown/10 my-1" />
                   <button
                     onClick={() => onEsgotarItem(it)}
                     className="block w-full text-left text-xs text-arraia-brown-dark hover:bg-arraia-cream rounded px-2 py-1"
                   >
-                    Esgotar {it.nome_snapshot} inteiro
+                    Esgotar {it.nome_snapshot} no cardápio
                   </button>
                   {variacoes
                     .filter((v) => v.disponivel)
@@ -356,14 +387,14 @@ function Cartao({
                         onClick={() => onEsgotarSabor(v, it.nome_snapshot)}
                         className="block w-full text-left text-xs text-arraia-brown-dark hover:bg-arraia-cream rounded px-2 py-1"
                       >
-                        Esgotar sabor: <b>{v.nome}</b>
+                        Esgotar sabor no cardápio: <b>{v.nome}</b>
                       </button>
                     ))}
                   <button
                     onClick={() => setMenuAberto(null)}
                     className="block w-full text-left text-[10px] text-arraia-brown/60 hover:bg-arraia-cream rounded px-2 py-1"
                   >
-                    cancelar
+                    fechar
                   </button>
                 </div>
               )}

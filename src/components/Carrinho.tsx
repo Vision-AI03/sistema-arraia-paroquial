@@ -6,6 +6,7 @@ type Props = {
   itens: CarrinhoItem[]
   total: number
   quantidadeTotal: number
+  pedidosAbertos?: boolean
   onAdicionar: (item_id: string) => void
   onRemover: (item_id: string) => void
   onFinalizar: () => void
@@ -15,6 +16,7 @@ export function Carrinho({
   itens,
   total,
   quantidadeTotal,
+  pedidosAbertos = true,
   onAdicionar,
   onRemover,
   onFinalizar,
@@ -116,12 +118,20 @@ export function Carrinho({
               <button
                 type="button"
                 onClick={onFinalizar}
-                className="w-full bg-arraia-red text-arraia-cream font-bold py-3 rounded-full shadow border-2 border-arraia-gold active:scale-[0.98]"
+                disabled={!pedidosAbertos}
+                className={
+                  'w-full font-bold py-3 rounded-full shadow border-2 active:scale-[0.98] ' +
+                  (pedidosAbertos
+                    ? 'bg-arraia-red text-arraia-cream border-arraia-gold'
+                    : 'bg-gray-400 text-gray-100 border-gray-500 cursor-not-allowed')
+                }
               >
-                Finalizar pedido
+                {pedidosAbertos ? 'Finalizar pedido' : 'Pedidos fechados'}
               </button>
               <p className="text-xs text-center text-arraia-brown/80">
-                Uma senha por barraca — dá pra retirar aos poucos.
+                {pedidosAbertos
+                  ? 'Uma senha por barraca — dá pra retirar aos poucos.'
+                  : 'Voltamos no próximo horário de atendimento.'}
               </p>
             </div>
           </div>

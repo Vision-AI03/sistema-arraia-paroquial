@@ -155,6 +155,38 @@ export default function Checkout() {
           </section>
         )}
 
+        {(() => {
+          if (!pago) return null
+          let totalCancelado = 0
+          let valorARessarcir = 0
+          for (const lista of Object.values(itensPorSub)) {
+            for (const it of lista) {
+              if (it.qtd_cancelada > 0) {
+                totalCancelado += it.qtd_cancelada
+                valorARessarcir += it.qtd_cancelada * it.preco_unitario
+              }
+            }
+          }
+          if (totalCancelado === 0) return null
+          return (
+            <section className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4">
+              <p className="text-yellow-900 font-bold text-center">
+                ⚠ {totalCancelado} unidade(s) não foi(ram) entregue(s)
+              </p>
+              <p className="text-yellow-800 text-sm text-center mt-2">
+                Valor a ressarcir:{' '}
+                <span className="font-bold text-lg">
+                  {formatBRL(valorARessarcir)}
+                </span>
+              </p>
+              <p className="text-yellow-800 text-xs text-center mt-2">
+                Procure o caixa ou a coordenação da festa mostrando esta tela
+                para receber seu ressarcimento.
+              </p>
+            </section>
+          )
+        })()}
+
         {/* Cards por setor */}
         <section className="space-y-3">
           {subOrdenados.map((sp) => {

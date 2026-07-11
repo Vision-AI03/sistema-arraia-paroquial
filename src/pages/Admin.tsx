@@ -22,6 +22,18 @@ const CARDS: Card[] = [
     pronto: true,
   },
   {
+    para: '/admin/horarios',
+    titulo: 'Horários',
+    descricao: 'Definir janelas de atendimento e pausar/reabrir pedidos.',
+    pronto: true,
+  },
+  {
+    para: '/admin/reembolsos',
+    titulo: 'Reembolsos',
+    descricao: 'Itens não entregues e valores a ressarcir aos clientes.',
+    pronto: true,
+  },
+  {
     para: '/admin/faturamento',
     titulo: 'Faturamento em tempo real',
     descricao: 'Total do dia, ticket médio e faturamento por setor.',

@@ -2,6 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCardapio } from '../hooks/useCardapio'
 import { useCarrinho } from '../hooks/useCarrinho'
+import {
+  formatarFechamentoHoje,
+  formatarProximaAbertura,
+  useAtendimento,
+} from '../hooks/useAtendimento'
 import { ItemCard } from '../components/ItemCard'
 import { Carrinho } from '../components/Carrinho'
 import { Toast } from '../components/Toast'
@@ -16,10 +21,13 @@ const CORES_CATEGORIA = ['#C0392B', '#E8B923', '#4E9A51', '#2E86C1', '#E67E22']
 export default function Cardapio() {
   const navigate = useNavigate()
   const { categorias, carregando: carregandoCardapio, erro } = useCardapio()
+  const { status: statusAtendimento } = useAtendimento()
   const { itens, adicionar, remover, limpar, total, quantidadeTotal } =
     useCarrinho()
   const [toast, setToast] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const aberto = statusAtendimento?.aberto ?? true
+  const fechaHoje = formatarFechamentoHoje(statusAtendimento)
 
   function handleAdicionar(item: Item) {
     if (!item.disponivel) return
@@ -44,6 +52,10 @@ export default function Cardapio() {
 
   async function handleFinalizar() {
     if (itens.length === 0 || enviando) return
+    if (!aberto) {
+      setToast('Pedidos fechados no momento')
+      return
+    }
     setEnviando(true)
     const payload = {
       itens: itens.map((i) => ({
@@ -100,6 +112,24 @@ export default function Cardapio() {
           </div>
         )}
 
+        {!aberto && (
+          <div className="bg-arraia-brown-dark text-arraia-cream rounded-xl p-4 mb-4 text-center shadow">
+            <p className="font-bold text-lg">Pedidos fechados</p>
+            <p className="text-sm opacity-90 mt-1">
+              Voltamos {formatarProximaAbertura(statusAtendimento)}.
+            </p>
+            <p className="text-xs opacity-70 mt-2">
+              Você ainda pode ver o cardápio.
+            </p>
+          </div>
+        )}
+
+        {aberto && fechaHoje && (
+          <p className="text-center text-[11px] text-arraia-brown/60 mb-3">
+            Aceitando pedidos hoje até as {fechaHoje}.
+          </p>
+        )}
+
         {carregandoCardapio && (
           <p className="text-center text-arraia-brown/70 py-10">
             Carregando cardápio…
@@ -143,6 +173,7 @@ export default function Cardapio() {
         itens={itens}
         total={total}
         quantidadeTotal={quantidadeTotal}
+        pedidosAbertos={aberto}
         onAdicionar={reAdicionar}
         onRemover={remover}
         onFinalizar={handleFinalizar}

@@ -6,6 +6,8 @@ import Login from './pages/Login'
 import Cozinha from './pages/Cozinha'
 import Admin from './pages/Admin'
 import AdminVincularSetores from './pages/AdminVincularSetores'
+import AdminHorarios from './pages/AdminHorarios'
+import AdminReembolsos from './pages/AdminReembolsos'
 import Disponibilidade from './pages/Disponibilidade'
 import Checkout from './pages/Checkout'
 import SemAcesso from './pages/SemAcesso'
@@ -52,6 +54,24 @@ export default function App() {
             element={
               <RotaProtegida papeisPermitidos={['admin']}>
                 <AdminVincularSetores />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/admin/horarios"
+            element={
+              <RotaProtegida papeisPermitidos={['admin']}>
+                <AdminHorarios />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/admin/reembolsos"
+            element={
+              <RotaProtegida papeisPermitidos={['admin']}>
+                <AdminReembolsos />
               </RotaProtegida>
             }
           />

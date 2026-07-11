@@ -43,7 +43,7 @@ export function useCozinha() {
       const { data, error } = await supabase
         .from('pedido_itens')
         .select(
-          'id, pedido_setor_id, item_id, variacao_id, nome_snapshot, variacao_snapshot, preco_unitario, quantidade, qtd_entregue, observacao'
+          'id, pedido_setor_id, item_id, variacao_id, nome_snapshot, variacao_snapshot, preco_unitario, quantidade, qtd_entregue, qtd_cancelada, observacao'
         )
         .in('pedido_setor_id', subIds)
       if (error) {
@@ -146,7 +146,13 @@ export function useCozinha() {
             return {
               ...old,
               [novo.pedido_setor_id]: lista.map((it) =>
-                it.id === novo.id ? { ...it, qtd_entregue: novo.qtd_entregue } : it
+                it.id === novo.id
+                  ? {
+                      ...it,
+                      qtd_entregue: novo.qtd_entregue,
+                      qtd_cancelada: novo.qtd_cancelada,
+                    }
+                  : it
               ),
             }
           })
@@ -276,13 +282,28 @@ export async function ajustarEntregue(
 export async function entregarTudo(
   itens: PedidoItem[]
 ): Promise<{ erro: string | null }> {
-  const alvo = itens.filter((it) => it.qtd_entregue < it.quantidade)
+  const alvo = itens.filter(
+    (it) => it.qtd_entregue + it.qtd_cancelada < it.quantidade
+  )
   for (const it of alvo) {
+    const restante = it.quantidade - it.qtd_cancelada
     const { error } = await supabase
       .from('pedido_itens')
-      .update({ qtd_entregue: it.quantidade })
+      .update({ qtd_entregue: restante })
       .eq('id', it.id)
     if (error) return { erro: error.message }
   }
   return { erro: null }
+}
+
+export async function cancelarUnidade(
+  it: PedidoItem
+): Promise<{ erro: string | null }> {
+  const restante = it.quantidade - it.qtd_entregue - it.qtd_cancelada
+  if (restante <= 0) return { erro: 'nada a cancelar' }
+  const { error } = await supabase
+    .from('pedido_itens')
+    .update({ qtd_cancelada: it.qtd_cancelada + 1 })
+    .eq('id', it.id)
+  return { erro: error?.message ?? null }
 }

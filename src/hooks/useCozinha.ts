@@ -179,3 +179,13 @@ export async function esgotarItem(itemId: string): Promise<{ erro: string | null
     .eq('id', itemId)
   return { erro: error?.message ?? null }
 }
+
+export async function esgotarVariacao(
+  variacaoId: string
+): Promise<{ erro: string | null }> {
+  const { error } = await supabase
+    .from('item_variacoes')
+    .update({ disponivel: false })
+    .eq('id', variacaoId)
+  return { erro: error?.message ?? null }
+}

@@ -4,10 +4,11 @@ import { useAuth } from '../hooks/useAuth'
 import {
   avancarStatus,
   esgotarItem,
+  esgotarVariacao,
   useCozinha,
   type CardKDS,
 } from '../hooks/useCozinha'
-import type { Setor, StatusPedido } from '../types'
+import type { PedidoItem, Setor, StatusPedido } from '../types'
 
 const COLUNAS: { status: StatusPedido; titulo: string; acao: string }[] = [
   { status: 'recebido', titulo: 'Recebidos', acao: 'Iniciar preparo' },
@@ -197,9 +198,20 @@ function Cartao({
     if (e) setErro(e)
   }
 
-  async function onEsgotar(itemId: string) {
-    if (!confirm('Marcar este item como esgotado?')) return
-    const { erro: e } = await esgotarItem(itemId)
+  async function onEsgotar(it: PedidoItem) {
+    if (it.variacao_id && it.variacao_snapshot) {
+      if (
+        !confirm(
+          `Esgotar apenas o sabor "${it.variacao_snapshot}" de ${it.nome_snapshot}?`
+        )
+      )
+        return
+      const { erro: e } = await esgotarVariacao(it.variacao_id)
+      if (e) setErro(e)
+      return
+    }
+    if (!confirm(`Esgotar "${it.nome_snapshot}" no cardápio?`)) return
+    const { erro: e } = await esgotarItem(it.item_id)
     if (e) setErro(e)
   }
 
@@ -254,11 +266,15 @@ function Cartao({
               )}
             </div>
             <button
-              onClick={() => onEsgotar(it.item_id)}
-              title="Marcar item como esgotado"
+              onClick={() => onEsgotar(it)}
+              title={
+                it.variacao_id
+                  ? `Esgotar sabor "${it.variacao_snapshot}"`
+                  : 'Esgotar item no cardápio'
+              }
               className="text-[10px] text-arraia-red hover:underline shrink-0"
             >
-              esgotar
+              {it.variacao_id ? 'esgotar sabor' : 'esgotar'}
             </button>
           </li>
         ))}

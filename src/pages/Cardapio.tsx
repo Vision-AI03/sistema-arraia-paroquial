@@ -22,6 +22,7 @@ export default function Cardapio() {
   const [enviando, setEnviando] = useState(false)
 
   function handleAdicionar(item: Item) {
+    if (!item.disponivel) return
     adicionar(item)
     setToast(`${item.nome} adicionado`)
   }

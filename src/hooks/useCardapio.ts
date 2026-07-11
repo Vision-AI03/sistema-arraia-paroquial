@@ -25,7 +25,6 @@ export function useCardapio() {
             .select(
               'id, categoria_id, nome, descricao, preco, disponivel, alcoolico, ordem'
             )
-            .eq('disponivel', true)
             .order('ordem', { ascending: true }),
           supabase
             .from('item_variacoes')

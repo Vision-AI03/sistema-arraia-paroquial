@@ -6,8 +6,8 @@ type Props = {
   itens: CarrinhoItem[]
   total: number
   quantidadeTotal: number
-  onAdicionar: (item_id: string) => void
-  onRemover: (item_id: string) => void
+  onAdicionar: (item_id: string, variacao_id: string | null) => void
+  onRemover: (item_id: string, variacao_id: string | null) => void
   onFinalizar: () => void
 }
 
@@ -68,12 +68,18 @@ export function Carrinho({
             <ul className="flex-1 overflow-y-auto p-4 space-y-3">
               {itens.map((it) => (
                 <li
-                  key={it.item_id}
+                  key={`${it.item_id}::${it.variacao_id ?? ''}`}
                   className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-arraia-brown-dark truncate">
                       {it.nome}
+                      {it.variacao_nome && (
+                        <span className="text-arraia-brown/70 font-normal">
+                          {' '}
+                          — {it.variacao_nome}
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-arraia-brown/80">
                       {formatBRL(it.preco)} cada
@@ -82,7 +88,7 @@ export function Carrinho({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => onRemover(it.item_id)}
+                      onClick={() => onRemover(it.item_id, it.variacao_id)}
                       aria-label="Diminuir"
                       className="w-9 h-9 rounded-full bg-arraia-cream border-2 border-arraia-gold-dark text-arraia-brown-dark font-bold text-lg active:scale-95"
                     >
@@ -93,7 +99,7 @@ export function Carrinho({
                     </span>
                     <button
                       type="button"
-                      onClick={() => onAdicionar(it.item_id)}
+                      onClick={() => onAdicionar(it.item_id, it.variacao_id)}
                       aria-label="Aumentar"
                       className="w-9 h-9 rounded-full bg-arraia-gold border-2 border-arraia-gold-dark text-arraia-brown-dark font-bold text-lg active:scale-95"
                     >

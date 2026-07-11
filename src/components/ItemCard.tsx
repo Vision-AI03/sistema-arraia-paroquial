@@ -1,9 +1,10 @@
-import type { Item } from '../types'
+import { useState } from 'react'
+import type { Item, ItemVariacao } from '../types'
 import { formatBRL } from '../utils/format'
 
 type Props = {
   item: Item
-  onAdicionar: (item: Item) => void
+  onAdicionar: (item: Item, variacao: ItemVariacao | null) => void
 }
 
 export function ItemCard({ item, onAdicionar }: Props) {
@@ -12,6 +13,18 @@ export function ItemCard({ item, onAdicionar }: Props) {
   const todasVariacoesEsgotadas =
     temVariacao && variacoes.every((v) => !v.disponivel)
   const esgotado = !item.disponivel || todasVariacoesEsgotadas
+
+  const [variacaoSelecionada, setVariacaoSelecionada] =
+    useState<ItemVariacao | null>(null)
+
+  const precisaEscolherSabor = temVariacao && !esgotado && !variacaoSelecionada
+  const desabilitado = esgotado || precisaEscolherSabor
+
+  function handleAdd() {
+    if (desabilitado) return
+    onAdicionar(item, variacaoSelecionada)
+    setVariacaoSelecionada(null)
+  }
 
   return (
     <article
@@ -46,6 +59,7 @@ export function ItemCard({ item, onAdicionar }: Props) {
               </span>
             )}
           </div>
+
           {item.descricao && (
             <p
               className={
@@ -56,29 +70,51 @@ export function ItemCard({ item, onAdicionar }: Props) {
               {item.descricao}
             </p>
           )}
+
           {temVariacao && (
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {variacoes.map((v) => (
-                <li
-                  key={v.id}
-                  className={
-                    'text-xs px-2 py-0.5 rounded-full border ' +
-                    (v.disponivel
-                      ? 'bg-arraia-cream border-arraia-gold/60 text-arraia-brown-dark'
-                      : 'bg-gray-100 border-gray-300 text-gray-500 line-through')
-                  }
-                  title={v.disponivel ? v.nome : `${v.nome} (esgotado)`}
-                >
-                  {v.nome}
-                  {!v.disponivel && (
-                    <span className="ml-1 no-underline font-semibold">
-                      esgotado
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <>
+              {!esgotado && (
+                <p className="text-[11px] uppercase tracking-wide text-arraia-brown/60 mt-2">
+                  Escolha um sabor:
+                </p>
+              )}
+              <ul className="mt-1 flex flex-wrap gap-1.5">
+                {variacoes.map((v) => {
+                  const selecionado = variacaoSelecionada?.id === v.id
+                  const clicavel = v.disponivel && !esgotado
+                  return (
+                    <li key={v.id}>
+                      <button
+                        type="button"
+                        disabled={!clicavel}
+                        onClick={() =>
+                          setVariacaoSelecionada(selecionado ? null : v)
+                        }
+                        aria-pressed={selecionado}
+                        className={
+                          'text-xs px-3 py-1 rounded-full border-2 font-semibold transition ' +
+                          (!clicavel
+                            ? 'bg-gray-100 border-gray-300 text-gray-500 line-through cursor-not-allowed'
+                            : selecionado
+                              ? 'bg-arraia-gold border-arraia-gold-dark text-arraia-brown-dark shadow-inner'
+                              : 'bg-arraia-cream border-arraia-gold/60 text-arraia-brown-dark hover:bg-arraia-gold/20')
+                        }
+                        title={
+                          v.disponivel ? v.nome : `${v.nome} (esgotado)`
+                        }
+                      >
+                        {v.nome}
+                        {!v.disponivel && (
+                          <span className="ml-1 no-underline">esgotado</span>
+                        )}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           )}
+
           <p
             className={
               'font-extrabold mt-2 text-lg ' +
@@ -88,18 +124,22 @@ export function ItemCard({ item, onAdicionar }: Props) {
             {formatBRL(item.preco)}
           </p>
         </div>
+
         <button
           type="button"
-          onClick={() => onAdicionar(item)}
-          disabled={esgotado}
+          onClick={handleAdd}
+          disabled={desabilitado}
           aria-label={
             esgotado
               ? `${item.nome} esgotado`
-              : `Adicionar ${item.nome}`
+              : precisaEscolherSabor
+                ? 'Escolha um sabor'
+                : `Adicionar ${item.nome}`
           }
+          title={precisaEscolherSabor ? 'Escolha um sabor' : undefined}
           className={
             'shrink-0 w-12 h-12 rounded-full text-3xl font-bold flex items-center justify-center shadow-md border-2 active:scale-95 transition ' +
-            (esgotado
+            (desabilitado
               ? 'bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed'
               : 'bg-arraia-gold text-arraia-brown-dark border-arraia-gold-dark')
           }

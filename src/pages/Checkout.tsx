@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../lib/supabase'
 import { useCheckout } from '../hooks/useCheckout'
 import type { StatusPedido } from '../types'
 import { formatBRL } from '../utils/format'
 
-const MODO_SIMULADO = import.meta.env.VITE_MODO_SIMULADO !== 'false'
+const MODO_SIMULADO = import.meta.env.VITE_MODO_SIMULADO === 'true'
 
 const LABEL_STATUS: Record<StatusPedido, string> = {
   aguardando_pagamento: 'Aguardando pagamento',
@@ -31,17 +32,39 @@ export default function Checkout() {
     useCheckout(pedidoId)
   const [pagando, setPagando] = useState(false)
   const [erroSim, setErroSim] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState(false)
 
   useEffect(() => {
     if (!pedidoId || !pedido) return
     if (pedido.status_pagto !== 'pendente') return
     if (pedido.mp_qr_code) return
-    supabase
-      .rpc('iniciar_cobranca_simulada', { p_pedido_id: pedidoId })
+
+    if (MODO_SIMULADO) {
+      supabase
+        .rpc('iniciar_cobranca_simulada', { p_pedido_id: pedidoId })
+        .then(({ error }) => {
+          if (error) console.error('[checkout] iniciar cobrança:', error.message)
+        })
+      return
+    }
+
+    supabase.functions
+      .invoke('sicredi-cobranca', { body: { pedido_id: pedidoId } })
       .then(({ error }) => {
-        if (error) console.error('[checkout] iniciar cobrança:', error.message)
+        if (error) console.error('[checkout] sicredi-cobranca:', error.message)
       })
   }, [pedidoId, pedido])
+
+  async function copiarPix() {
+    if (!pedido?.mp_qr_code) return
+    try {
+      await navigator.clipboard.writeText(pedido.mp_qr_code)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch (e) {
+      console.error('[checkout] copiar:', e)
+    }
+  }
 
   async function simularPagamento() {
     if (!pedidoId) return
@@ -105,16 +128,32 @@ export default function Checkout() {
               Pague com PIX para liberar o pedido
             </h1>
 
-            <div className="mx-auto w-56 h-56 border-4 border-dashed border-arraia-brown/30 rounded-xl flex items-center justify-center text-xs text-arraia-brown/60 p-3">
-              {MODO_SIMULADO
-                ? 'QR PIX (modo simulado — sem integração)'
-                : 'Carregando QR PIX…'}
+            <div className="mx-auto w-56 h-56 border-4 border-dashed border-arraia-brown/30 rounded-xl flex items-center justify-center p-3 bg-white">
+              {pedido.mp_qr_code && !MODO_SIMULADO ? (
+                <QRCodeSVG value={pedido.mp_qr_code} size={208} level="M" />
+              ) : (
+                <span className="text-xs text-arraia-brown/60 text-center">
+                  {MODO_SIMULADO
+                    ? 'QR PIX (modo simulado — sem integração)'
+                    : 'Gerando QR PIX…'}
+                </span>
+              )}
             </div>
 
             {pedido.mp_qr_code && (
-              <p className="text-[11px] font-mono text-arraia-brown/70 break-all">
-                {pedido.mp_qr_code}
-              </p>
+              <>
+                <p className="text-[11px] font-mono text-arraia-brown/70 break-all">
+                  {pedido.mp_qr_code}
+                </p>
+                {!MODO_SIMULADO && (
+                  <button
+                    onClick={copiarPix}
+                    className="text-sm bg-arraia-brown-dark text-arraia-cream px-3 py-1.5 rounded-md font-semibold"
+                  >
+                    {copiado ? '✓ Copiado' : 'Copiar código PIX'}
+                  </button>
+                )}
+              </>
             )}
 
             <p className="text-arraia-brown-dark font-semibold">

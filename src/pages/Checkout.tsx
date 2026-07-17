@@ -187,9 +187,21 @@ export default function Checkout() {
             <p className="text-green-800 font-bold">
               ✓ Pagamento confirmado
             </p>
-            <p className="text-sm text-green-700 mt-1">
-              Retire seu pedido nas barracas abaixo mostrando a senha
-              correspondente.
+            {pedido.codigo != null && (
+              <div className="mt-3 bg-white border-2 border-green-300 rounded-lg py-3">
+                <p className="text-[11px] uppercase tracking-wide text-green-700">
+                  Código de retirada
+                </p>
+                <p className="text-5xl font-extrabold text-green-800 leading-none my-1">
+                  {pedido.codigo}
+                </p>
+                <p className="text-sm text-green-700">
+                  Mostre este código no caixa para retirar suas fichas.
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-green-700 mt-3">
+              As senhas de cada barraca também aparecem abaixo.
             </p>
           </section>
         )}

@@ -4,6 +4,7 @@ import { RotaProtegida } from './components/RotaProtegida'
 import Cardapio from './pages/Cardapio'
 import Login from './pages/Login'
 import Cozinha from './pages/Cozinha'
+import Caixa from './pages/Caixa'
 import Admin from './pages/Admin'
 import AdminVincularSetores from './pages/AdminVincularSetores'
 import AdminHorarios from './pages/AdminHorarios'
@@ -38,6 +39,15 @@ export default function App() {
             element={
               <RotaProtegida papeisPermitidos={['admin']}>
                 <Admin />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/caixa"
+            element={
+              <RotaProtegida papeisPermitidos={['cozinha', 'admin']}>
+                <Caixa />
               </RotaProtegida>
             }
           />

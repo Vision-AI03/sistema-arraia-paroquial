@@ -46,6 +46,12 @@ const CARDS: Card[] = [
     pronto: true,
   },
   {
+    para: '/caixa',
+    titulo: 'Caixa (imprimir fichas)',
+    descricao: 'Buscar pedido pago pelo código e imprimir as fichas por barraca.',
+    pronto: true,
+  },
+  {
     para: '/admin/catalogo',
     titulo: 'Catálogo',
     descricao: 'Gestão de categorias, itens, sabores e preços.',

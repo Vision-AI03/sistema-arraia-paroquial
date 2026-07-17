@@ -60,6 +60,7 @@ export type Pedido = {
   observacao: string | null
   criado_em: string
   pago_em: string | null
+  codigo: number | null
 }
 
 export type PedidoSetor = {

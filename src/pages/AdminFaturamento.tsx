@@ -28,9 +28,10 @@ type TopItem = {
 }
 
 function diaSP(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-  })
+  // `iso` já vem como a data em SP (ex.: '2026-07-17'). Formata sem criar Date,
+  // pra não reconverter o fuso e deslocar o dia.
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return `${d}/${m}/${y}`
 }
 
 function hojeSP(): string {

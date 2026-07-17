@@ -23,7 +23,6 @@ export default function Caixa() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [filtro, setFiltro] = useState('')
-  const [impressos, setImpressos] = useState<Set<number>>(new Set())
   const [imprimindo, setImprimindo] = useState<PedidoCompleto | null>(null)
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function Caixa() {
         supabase
           .from('pedidos')
           .select(
-            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo'
+            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, fichas_impressas_em'
           )
           .eq('status_pagto', 'pago')
           .order('pago_em', { ascending: false })
@@ -138,13 +137,24 @@ export default function Caixa() {
     }
   }, [])
 
-  function imprimir(pc: PedidoCompleto) {
+  async function imprimir(pc: PedidoCompleto) {
     setImprimindo(pc)
-    if (pc.pedido.codigo != null) {
-      setImpressos((s) => new Set(s).add(pc.pedido.codigo as number))
-    }
     // deixa o React montar as fichas antes de abrir o diálogo de impressão
     setTimeout(() => window.print(), 60)
+
+    // marca como impresso de forma persistente (sobrevive a refresh/troca de aba)
+    const agora = new Date().toISOString()
+    setLista((old) =>
+      old.map((x) =>
+        x.pedido.id === pc.pedido.id
+          ? { ...x, pedido: { ...x.pedido, fichas_impressas_em: agora } }
+          : x
+      )
+    )
+    const { error } = await supabase.rpc('marcar_fichas_impressas', {
+      p_pedido_id: pc.pedido.id,
+    })
+    if (error) console.error('[caixa] marcar impresso:', error.message)
   }
 
   const listaFiltrada = useMemo(() => {
@@ -222,7 +232,7 @@ export default function Caixa() {
           <ul className="space-y-3">
             {listaFiltrada.map((pc) => {
               const jaImpresso =
-                pc.pedido.codigo != null && impressos.has(pc.pedido.codigo)
+                pc.pedido.fichas_impressas_em != null
               return (
                 <li
                   key={pc.pedido.id}
@@ -344,9 +354,10 @@ export default function Caixa() {
                       </div>
                       <div
                         style={{
-                          fontSize: '8px',
+                          fontSize: '10px',
                           marginTop: '5mm',
-                          opacity: 0.6,
+                          color: '#000',
+                          fontWeight: 'bold',
                         }}
                       >
                         Powered by VISION AI

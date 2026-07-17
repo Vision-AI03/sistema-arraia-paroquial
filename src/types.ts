@@ -61,6 +61,7 @@ export type Pedido = {
   criado_em: string
   pago_em: string | null
   codigo: number | null
+  fichas_impressas_em?: string | null
 }
 
 export type PedidoSetor = {

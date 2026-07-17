@@ -37,7 +37,13 @@ const CARDS: Card[] = [
     para: '/admin/faturamento',
     titulo: 'Faturamento em tempo real',
     descricao: 'Total do dia, ticket médio e faturamento por setor.',
-    pronto: false,
+    pronto: true,
+  },
+  {
+    para: '/admin/qr-mesas',
+    titulo: 'QR das mesas',
+    descricao: 'Gerar e imprimir o cartaz com QR Code para colar nas mesas.',
+    pronto: true,
   },
   {
     para: '/admin/catalogo',

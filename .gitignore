@@ -15,6 +15,14 @@ dist-ssr
 .env.*
 !.env.example
 
+# Sicredi — segredos nunca vão pro git
+docs/sicredi/*.pfx
+docs/sicredi/*.p12
+docs/sicredi/*.pem
+docs/sicredi/*.senha.txt
+docs/sicredi/*.key
+.sicredi-secrets/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

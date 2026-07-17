@@ -8,6 +8,8 @@ import Admin from './pages/Admin'
 import AdminVincularSetores from './pages/AdminVincularSetores'
 import AdminHorarios from './pages/AdminHorarios'
 import AdminReembolsos from './pages/AdminReembolsos'
+import AdminFaturamento from './pages/AdminFaturamento'
+import AdminQrMesas from './pages/AdminQrMesas'
 import Disponibilidade from './pages/Disponibilidade'
 import Checkout from './pages/Checkout'
 import SemAcesso from './pages/SemAcesso'
@@ -72,6 +74,24 @@ export default function App() {
             element={
               <RotaProtegida papeisPermitidos={['admin']}>
                 <AdminReembolsos />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/admin/faturamento"
+            element={
+              <RotaProtegida papeisPermitidos={['admin']}>
+                <AdminFaturamento />
+              </RotaProtegida>
+            }
+          />
+
+          <Route
+            path="/admin/qr-mesas"
+            element={
+              <RotaProtegida papeisPermitidos={['admin']}>
+                <AdminQrMesas />
               </RotaProtegida>
             }
           />

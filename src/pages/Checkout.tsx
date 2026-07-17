@@ -201,7 +201,7 @@ export default function Checkout() {
               </div>
             )}
             <p className="text-sm text-green-700 mt-3">
-              As senhas de cada barraca também aparecem abaixo.
+              Acompanhe o preparo de cada barraca abaixo.
             </p>
           </section>
         )}
@@ -273,15 +273,7 @@ export default function Checkout() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] text-arraia-brown/60 uppercase tracking-wide">
-                      Senha
-                    </p>
-                    <p className="text-3xl font-bold text-arraia-brown-dark">
-                      {sp.senha ?? '—'}
-                    </p>
-                  </div>
+                <div className="mt-3 flex items-center justify-end">
                   <p className="text-sm text-arraia-brown-dark font-semibold">
                     {formatBRL(sp.subtotal)}
                   </p>

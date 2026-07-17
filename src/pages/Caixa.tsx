@@ -290,52 +290,82 @@ export default function Caixa() {
         </main>
       </div>
 
-      {/* ---------- FICHA (só na impressão) ----------
-          Tira única por pedido: um item por linha (uma linha por unidade),
-          nome do produto centralizado e grande, com uma linha embaixo.
-          Sem cabeçalho — igual ao modelo da festa. */}
-      {imprimindo && (
-        <div className="fichas-print hidden">
-          <div
-            className="ficha"
-            style={{
-              width: '72mm',
-              fontFamily: 'monospace',
-              color: '#000',
-              padding: '4mm 0',
-            }}
-          >
-            {imprimindo.barracas.flatMap((b) =>
-              b.itens.flatMap((it) =>
-                Array.from({ length: it.quantidade }).map((_, i) => (
-                  <div
-                    key={`${it.id}-${i}`}
-                    style={{ textAlign: 'center', marginBottom: '16px' }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '26px',
-                        lineHeight: 1.15,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {it.nome_snapshot}
-                      {it.variacao_snapshot ? ` (${it.variacao_snapshot})` : ''}
+      {/* ---------- FICHAS (só na impressão) ----------
+          Tira ÚNICA contínua por pedido (sem corte entre itens — o cliente
+          destaca). Cada bloco é uma ficha completa e autossuficiente
+          (cabeçalho + produto + valor + rodapé), separada por uma linha
+          tracejada com bastante espaço em volta pra destacar sem rasgar. */}
+      {imprimindo &&
+        (() => {
+          const unidades = imprimindo.barracas.flatMap((b) =>
+            b.itens.flatMap((it) =>
+              Array.from({ length: it.quantidade }).map((_, i) => ({
+                it,
+                key: `${it.id}-${i}`,
+              }))
+            )
+          )
+          return (
+            <div className="fichas-print hidden">
+              <div
+                className="ficha"
+                style={{
+                  width: '72mm',
+                  fontFamily: 'monospace',
+                  color: '#000',
+                  padding: '2mm 0',
+                }}
+              >
+                {unidades.map(({ it, key }, idx) => (
+                  <div key={key}>
+                    <div style={{ textAlign: 'center', padding: '5mm 2mm' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                        136ª Festa de São Sebastião
+                      </div>
+                      <div style={{ fontSize: '10px', marginTop: '1px' }}>
+                        Paróquia Nossa Senhora da Conceição - Ipeúna/SP
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '26px',
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase',
+                          lineHeight: 1.15,
+                          margin: '6mm 0 2mm',
+                        }}
+                      >
+                        {it.nome_snapshot}
+                        {it.variacao_snapshot
+                          ? ` (${it.variacao_snapshot})`
+                          : ''}
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        {formatBRL(it.preco_unitario)}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '8px',
+                          marginTop: '5mm',
+                          opacity: 0.6,
+                        }}
+                      >
+                        Powered by VISION AI
+                      </div>
                     </div>
-                    <div
-                      style={{
-                        borderBottom: '1px solid #000',
-                        width: '60%',
-                        margin: '10px auto 0',
-                      }}
-                    />
+                    {idx < unidades.length - 1 && (
+                      <div
+                        style={{
+                          borderTop: '1px dashed #000',
+                          margin: '0 4mm',
+                        }}
+                      />
+                    )}
                   </div>
-                ))
-              )
-            )}
-          </div>
-        </div>
-      )}
+                ))}
+              </div>
+            </div>
+          )
+        })()}
     </div>
   )
 }

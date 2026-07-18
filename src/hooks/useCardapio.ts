@@ -25,6 +25,10 @@ export function useCardapio() {
             .select(
               'id, categoria_id, nome, descricao, preco, disponivel, alcoolico, ordem'
             )
+            // Item esgotado some do cardápio (não aparece riscado). Já sabor
+            // esgotado continua aparecendo riscado — isso é tratado no ItemCard,
+            // que ainda recebe todas as variações do item.
+            .eq('disponivel', true)
             .order('ordem', { ascending: true }),
           supabase
             .from('item_variacoes')

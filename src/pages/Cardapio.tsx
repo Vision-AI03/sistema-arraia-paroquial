@@ -42,6 +42,7 @@ export default function Cardapio() {
       id: atual.item_id,
       nome: atual.nome,
       preco: atual.preco,
+      preco_de: null,
       categoria_id: '',
       descricao: null,
       disponivel: true,

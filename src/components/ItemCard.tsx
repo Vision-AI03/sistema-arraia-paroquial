@@ -12,6 +12,8 @@ export function ItemCard({ item, onAdicionar }: Props) {
   const todasVariacoesEsgotadas =
     temVariacao && variacoes.every((v) => !v.disponivel)
   const esgotado = !item.disponivel || todasVariacoesEsgotadas
+  const emPromocao =
+    !esgotado && item.preco_de != null && item.preco_de > item.preco
 
   return (
     <article
@@ -43,6 +45,11 @@ export function ItemCard({ item, onAdicionar }: Props) {
             {esgotado && (
               <span className="text-[10px] font-bold uppercase tracking-wide bg-arraia-brown/80 text-arraia-cream px-1.5 py-0.5 rounded-md">
                 esgotado
+              </span>
+            )}
+            {emPromocao && (
+              <span className="text-[10px] font-extrabold uppercase tracking-wide bg-arraia-gold text-arraia-brown-dark px-1.5 py-0.5 rounded-md border border-arraia-gold-dark">
+                promoção
               </span>
             )}
           </div>
@@ -82,14 +89,25 @@ export function ItemCard({ item, onAdicionar }: Props) {
             </ul>
           )}
 
-          <p
-            className={
-              'font-extrabold mt-2 text-lg ' +
-              (esgotado ? 'text-arraia-brown/50' : 'text-arraia-red')
-            }
-          >
-            {formatBRL(item.preco)}
-          </p>
+          {emPromocao ? (
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-sm font-semibold text-arraia-brown/50 line-through">
+                {formatBRL(item.preco_de!)}
+              </span>
+              <span className="font-extrabold text-2xl text-arraia-red leading-none">
+                {formatBRL(item.preco)}
+              </span>
+            </div>
+          ) : (
+            <p
+              className={
+                'font-extrabold mt-2 text-lg ' +
+                (esgotado ? 'text-arraia-brown/50' : 'text-arraia-red')
+              }
+            >
+              {formatBRL(item.preco)}
+            </p>
+          )}
         </div>
 
         <button

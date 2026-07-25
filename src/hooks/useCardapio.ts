@@ -23,7 +23,7 @@ export function useCardapio() {
           supabase
             .from('itens')
             .select(
-              'id, categoria_id, nome, descricao, preco, disponivel, alcoolico, ordem'
+              'id, categoria_id, nome, descricao, preco, preco_de, disponivel, alcoolico, ordem'
             )
             // Item esgotado some do cardápio (não aparece riscado). Já sabor
             // esgotado continua aparecendo riscado — isso é tratado no ItemCard,
@@ -52,6 +52,7 @@ export function useCardapio() {
           const item: Item = {
             ...it,
             preco: Number(it.preco),
+            preco_de: it.preco_de == null ? null : Number(it.preco_de),
             variacoes: variacoesPorItem.get(it.id) ?? [],
           }
           const lista = itensPorCat.get(it.categoria_id) ?? []

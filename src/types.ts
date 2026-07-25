@@ -29,6 +29,7 @@ export type Item = {
   nome: string
   descricao: string | null
   preco: number
+  preco_de: number | null
   disponivel: boolean
   alcoolico: boolean
   ordem: number

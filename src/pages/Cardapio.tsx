@@ -50,14 +50,19 @@ export default function Cardapio() {
     })
   }
 
-  async function handleFinalizar() {
+  async function handleFinalizar(nome: string) {
     if (itens.length === 0 || enviando) return
     if (!aberto) {
       setToast('Pedidos fechados no momento')
       return
     }
+    if (nome.trim().length < 2) {
+      setToast('Digite seu nome para continuar')
+      return
+    }
     setEnviando(true)
     const payload = {
+      nome_cliente: nome.trim(),
       itens: itens.map((i) => ({
         item_id: i.item_id,
         quantidade: i.quantidade,

@@ -33,7 +33,7 @@ export default function Caixa() {
         supabase
           .from('pedidos')
           .select(
-            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, fichas_impressas_em'
+            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente, fichas_impressas_em'
           )
           .eq('status_pagto', 'pago')
           .order('pago_em', { ascending: false })
@@ -158,9 +158,13 @@ export default function Caixa() {
   }
 
   const listaFiltrada = useMemo(() => {
-    const f = filtro.trim()
+    const f = filtro.trim().toLowerCase()
     if (!f) return lista
-    return lista.filter((pc) => String(pc.pedido.codigo ?? '').includes(f))
+    return lista.filter((pc) => {
+      const cod = String(pc.pedido.codigo ?? '')
+      const nome = (pc.pedido.nome_cliente ?? '').toLowerCase()
+      return cod.includes(f) || nome.includes(f)
+    })
   }, [lista, filtro])
 
   return (
@@ -201,10 +205,9 @@ export default function Caixa() {
         <main className="max-w-2xl mx-auto p-4 space-y-4">
           <div className="bg-white rounded-xl shadow-sm p-3 flex items-center gap-2">
             <input
-              inputMode="numeric"
               value={filtro}
-              onChange={(e) => setFiltro(e.target.value.replace(/\D/g, ''))}
-              placeholder="Filtrar pelo código (opcional)"
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Filtrar por código ou nome (opcional)"
               className="flex-1 border border-arraia-brown/20 rounded px-3 py-2 text-lg"
             />
             {filtro && (
@@ -224,7 +227,7 @@ export default function Caixa() {
           {!carregando && listaFiltrada.length === 0 && (
             <p className="text-center text-arraia-brown/60 bg-white rounded-xl shadow-sm p-6">
               {filtro
-                ? `Nenhum pedido pago com código contendo "${filtro}".`
+                ? `Nenhum pedido pago com código ou nome contendo "${filtro}".`
                 : 'Nenhum pedido pago no momento. A fila atualiza sozinha quando um pagamento é confirmado.'}
             </p>
           )}
@@ -248,6 +251,11 @@ export default function Caixa() {
                       <p className="text-4xl font-extrabold text-arraia-brown-dark leading-none">
                         {pc.pedido.codigo ?? '—'}
                       </p>
+                      {pc.pedido.nome_cliente && (
+                        <p className="text-lg font-bold text-arraia-red mt-1 leading-tight">
+                          {pc.pedido.nome_cliente}
+                        </p>
+                      )}
                       <p className="text-xs text-arraia-brown/60 mt-1">
                         pago às {horaSP(pc.pedido.pago_em)} •{' '}
                         {formatBRL(pc.pedido.total)}

@@ -58,6 +58,7 @@ export type Pedido = {
   status_pagto: StatusPagamento
   mp_qr_code: string | null
   observacao: string | null
+  nome_cliente: string | null
   criado_em: string
   pago_em: string | null
   codigo: number | null

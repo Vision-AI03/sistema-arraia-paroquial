@@ -9,7 +9,7 @@ type Props = {
   pedidosAbertos?: boolean
   onAdicionar: (item_id: string) => void
   onRemover: (item_id: string) => void
-  onFinalizar: () => void
+  onFinalizar: (nome: string) => void
 }
 
 export function Carrinho({
@@ -22,7 +22,10 @@ export function Carrinho({
   onFinalizar,
 }: Props) {
   const [aberto, setAberto] = useState(false)
+  const [nome, setNome] = useState('')
   const vazio = quantidadeTotal === 0
+  const nomeValido = nome.trim().length >= 2
+  const podeFinalizar = pedidosAbertos && nomeValido
 
   return (
     <>
@@ -115,18 +118,46 @@ export function Carrinho({
                   {formatBRL(total)}
                 </span>
               </div>
+
+              {pedidosAbertos && (
+                <div>
+                  <label
+                    htmlFor="nome-cliente"
+                    className="block text-sm font-semibold text-arraia-brown-dark mb-1"
+                  >
+                    Seu nome
+                  </label>
+                  <input
+                    id="nome-cliente"
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value.slice(0, 60))}
+                    placeholder="Ex.: Maria Silva"
+                    autoComplete="name"
+                    className="w-full border-2 border-arraia-gold-dark rounded-lg px-3 py-2 text-arraia-brown-dark focus:outline-none focus:ring-2 focus:ring-arraia-gold"
+                  />
+                  <p className="text-xs text-arraia-brown/70 mt-1">
+                    Usamos o nome para identificar seu pedido no caixa.
+                  </p>
+                </div>
+              )}
+
               <button
                 type="button"
-                onClick={onFinalizar}
-                disabled={!pedidosAbertos}
+                onClick={() => podeFinalizar && onFinalizar(nome.trim())}
+                disabled={!podeFinalizar}
                 className={
                   'w-full font-bold py-3 rounded-full shadow border-2 active:scale-[0.98] ' +
-                  (pedidosAbertos
+                  (podeFinalizar
                     ? 'bg-arraia-red text-arraia-cream border-arraia-gold'
                     : 'bg-gray-400 text-gray-100 border-gray-500 cursor-not-allowed')
                 }
               >
-                {pedidosAbertos ? 'Finalizar pedido' : 'Pedidos fechados'}
+                {!pedidosAbertos
+                  ? 'Pedidos fechados'
+                  : !nomeValido
+                    ? 'Digite seu nome para continuar'
+                    : 'Finalizar pedido'}
               </button>
               <p className="text-xs text-center text-arraia-brown/80">
                 {pedidosAbertos

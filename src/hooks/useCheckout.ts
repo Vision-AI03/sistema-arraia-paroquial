@@ -34,7 +34,7 @@ export function useCheckout(pedidoId: string | undefined) {
         supabase
           .from('pedidos')
           .select(
-            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo'
+            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente'
           )
           .eq('id', pedidoId!)
           .maybeSingle(),

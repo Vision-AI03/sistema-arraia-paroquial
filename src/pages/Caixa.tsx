@@ -29,6 +29,12 @@ export default function Caixa() {
     let cancelado = false
 
     async function carregar() {
+      // Pedidos ainda não impressos nunca podem ser cortados por um limite
+      // fixo de linhas (senão somem da fila conforme mais pedidos entram).
+      // Só aplicamos um corte por tempo aos já impressos, pra não deixar a
+      // lista crescer sem fim ao longo do evento.
+      const duasHorasAtras = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+
       const [pedRes, setRes] = await Promise.all([
         supabase
           .from('pedidos')
@@ -36,8 +42,8 @@ export default function Caixa() {
             'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente, fichas_impressas_em'
           )
           .eq('status_pagto', 'pago')
-          .order('pago_em', { ascending: false })
-          .limit(60),
+          .or(`fichas_impressas_em.is.null,pago_em.gte.${duasHorasAtras}`)
+          .order('pago_em', { ascending: false }),
         supabase
           .from('setores')
           .select('id, nome, prefixo_senha, cor, ordem, ativo')

@@ -149,9 +149,13 @@ export default function Cardapio() {
         )}
 
         <div className="space-y-6">
-          {categorias.map((cat, idx) => (
+          {categorias.map((cat, idx) => {
+            const categoriaEmPromocao = cat.itens.some(
+              (i) => i.disponivel && i.preco_de != null && i.preco_de > i.preco
+            )
+            return (
             <section key={cat.id}>
-              <h2 className="text-xl font-bold text-arraia-brown-dark mb-2 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-arraia-brown-dark mb-2 flex items-center gap-2 flex-wrap">
                 <span
                   className="inline-block w-1.5 h-6 rounded-sm"
                   style={{
@@ -160,6 +164,11 @@ export default function Cardapio() {
                   }}
                 />
                 {cat.nome}
+                {categoriaEmPromocao && (
+                  <span className="text-[10px] font-extrabold uppercase tracking-wide bg-arraia-gold text-arraia-brown-dark px-1.5 py-0.5 rounded-md border border-arraia-gold-dark">
+                    promoção
+                  </span>
+                )}
               </h2>
               <div className="space-y-3">
                 {cat.itens.map((item) => (
@@ -171,7 +180,8 @@ export default function Cardapio() {
                 ))}
               </div>
             </section>
-          ))}
+            )
+          })}
         </div>
       </main>
 

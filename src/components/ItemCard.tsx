@@ -47,11 +47,6 @@ export function ItemCard({ item, onAdicionar }: Props) {
                 esgotado
               </span>
             )}
-            {emPromocao && (
-              <span className="text-[10px] font-extrabold uppercase tracking-wide bg-arraia-gold text-arraia-brown-dark px-1.5 py-0.5 rounded-md border border-arraia-gold-dark">
-                promoção
-              </span>
-            )}
           </div>
 
           {item.descricao && (

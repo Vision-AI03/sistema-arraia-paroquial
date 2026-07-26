@@ -41,6 +41,33 @@ function diaCurtoSP(iso: string | null): string {
   })
 }
 
+// Busca por `.in(col, ids)` fatiada em lotes, pra não montar uma URL enorme
+// (centenas de UUIDs numa query só travam/estouram o fetch). Lança em erro.
+async function buscarPorIds<T>(
+  tabela: string,
+  colunas: string,
+  coluna: string,
+  ids: string[],
+  tamanhoLote = 150
+): Promise<T[]> {
+  if (ids.length === 0) return []
+  const lotes: string[][] = []
+  for (let i = 0; i < ids.length; i += tamanhoLote) {
+    lotes.push(ids.slice(i, i + tamanhoLote))
+  }
+  const resultados = await Promise.all(
+    lotes.map((lote) =>
+      supabase.from(tabela).select(colunas).in(coluna, lote)
+    )
+  )
+  const out: T[] = []
+  for (const r of resultados) {
+    if (r.error) throw new Error(r.error.message)
+    out.push(...((r.data ?? []) as T[]))
+  }
+  return out
+}
+
 export default function Caixa() {
   const { perfil, sair } = useAuth()
   const [lista, setLista] = useState<PedidoCompleto[]>([])
@@ -53,95 +80,90 @@ export default function Caixa() {
     let cancelado = false
 
     async function carregar() {
-      const [pedRes, setRes] = await Promise.all([
-        supabase
-          .from('pedidos')
-          .select(
-            'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente, fichas_impressas_em'
-          )
-          .eq('status_pagto', 'pago')
-          .gte('pago_em', inicioOntemSP())
-          .order('pago_em', { ascending: false })
-          .limit(2000),
-        supabase
-          .from('setores')
-          .select('id, nome, prefixo_senha, cor, ordem, ativo')
-          .order('ordem'),
-      ])
-
-      if (cancelado) return
-      if (pedRes.error || setRes.error) {
-        setErro(pedRes.error?.message ?? setRes.error?.message ?? 'Erro')
-        setCarregando(false)
-        return
-      }
-
-      const pedidos = (pedRes.data ?? []) as Pedido[]
-      const setores = new Map(
-        ((setRes.data ?? []) as Setor[]).map((s) => [s.id, s])
-      )
-      const pedidoIds = pedidos.map((p) => p.id)
-
-      const subRes = pedidoIds.length
-        ? await supabase
-            .from('pedido_setores')
+      try {
+        const [pedRes, setRes] = await Promise.all([
+          supabase
+            .from('pedidos')
             .select(
-              'id, pedido_id, setor_id, senha, status, subtotal, retirado_em'
+              'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente, fichas_impressas_em'
             )
-            .in('pedido_id', pedidoIds)
-        : { data: [], error: null }
+            .eq('status_pagto', 'pago')
+            .gte('pago_em', inicioOntemSP())
+            .order('pago_em', { ascending: false })
+            .limit(2000),
+          supabase
+            .from('setores')
+            .select('id, nome, prefixo_senha, cor, ordem, ativo')
+            .order('ordem'),
+        ])
 
-      if (cancelado) return
-      if (subRes.error) {
-        setErro(subRes.error.message)
-        setCarregando(false)
-        return
-      }
-
-      const subs = (subRes.data ?? []) as PedidoSetor[]
-      const subIds = subs.map((s) => s.id)
-      const itensRes = subIds.length
-        ? await supabase
-            .from('pedido_itens')
-            .select('*')
-            .in('pedido_setor_id', subIds)
-        : { data: [], error: null }
-
-      if (cancelado) return
-      if (itensRes.error) {
-        setErro(itensRes.error.message)
-        setCarregando(false)
-        return
-      }
-
-      const itensPorSub: Record<string, PedidoItem[]> = {}
-      for (const it of (itensRes.data ?? []) as PedidoItem[]) {
-        ;(itensPorSub[it.pedido_setor_id] ??= []).push(it)
-      }
-
-      const subsPorPedido: Record<string, PedidoSetor[]> = {}
-      for (const s of subs) {
-        ;(subsPorPedido[s.pedido_id] ??= []).push(s)
-      }
-
-      const completos: PedidoCompleto[] = pedidos.map((pedido) => ({
-        pedido,
-        barracas: (subsPorPedido[pedido.id] ?? [])
-          .filter((sp) => sp.status !== 'cancelado')
-          .sort(
-            (a, b) =>
-              (setores.get(a.setor_id)?.ordem ?? 0) -
-              (setores.get(b.setor_id)?.ordem ?? 0)
+        if (cancelado) return
+        if (pedRes.error || setRes.error) {
+          throw new Error(
+            pedRes.error?.message ?? setRes.error?.message ?? 'Erro'
           )
-          .map((sp) => ({
-            sp,
-            setor: setores.get(sp.setor_id),
-            itens: itensPorSub[sp.id] ?? [],
-          })),
-      }))
+        }
 
-      setLista(completos)
-      setCarregando(false)
+        const pedidos = (pedRes.data ?? []) as Pedido[]
+        const setores = new Map(
+          ((setRes.data ?? []) as Setor[]).map((s) => [s.id, s])
+        )
+        const pedidoIds = pedidos.map((p) => p.id)
+
+        // Busca em lotes pra não estourar a URL com centenas de UUIDs.
+        const subs = await buscarPorIds<PedidoSetor>(
+          'pedido_setores',
+          'id, pedido_id, setor_id, senha, status, subtotal, retirado_em',
+          'pedido_id',
+          pedidoIds
+        )
+        if (cancelado) return
+
+        const subIds = subs.map((s) => s.id)
+        const itens = await buscarPorIds<PedidoItem>(
+          'pedido_itens',
+          '*',
+          'pedido_setor_id',
+          subIds
+        )
+        if (cancelado) return
+
+        const itensPorSub: Record<string, PedidoItem[]> = {}
+        for (const it of itens) {
+          ;(itensPorSub[it.pedido_setor_id] ??= []).push(it)
+        }
+
+        const subsPorPedido: Record<string, PedidoSetor[]> = {}
+        for (const s of subs) {
+          ;(subsPorPedido[s.pedido_id] ??= []).push(s)
+        }
+
+        const completos: PedidoCompleto[] = pedidos.map((pedido) => ({
+          pedido,
+          barracas: (subsPorPedido[pedido.id] ?? [])
+            .filter((sp) => sp.status !== 'cancelado')
+            .sort(
+              (a, b) =>
+                (setores.get(a.setor_id)?.ordem ?? 0) -
+                (setores.get(b.setor_id)?.ordem ?? 0)
+            )
+            .map((sp) => ({
+              sp,
+              setor: setores.get(sp.setor_id),
+              itens: itensPorSub[sp.id] ?? [],
+            })),
+        }))
+
+        if (cancelado) return
+        setLista(completos)
+        setErro(null)
+      } catch (e) {
+        if (cancelado) return
+        setErro(e instanceof Error ? e.message : 'Erro ao carregar a fila')
+        console.error('[caixa] carregar:', e)
+      } finally {
+        if (!cancelado) setCarregando(false)
+      }
     }
 
     carregar()

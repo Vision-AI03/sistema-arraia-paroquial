@@ -53,7 +53,7 @@ export default function AdminFaturamento() {
 
     async function carregar() {
       const [d, s, t] = await Promise.all([
-        supabase.from('faturamento_dia').select('*').limit(14),
+        supabase.from('faturamento_dia').select('*').limit(90),
         supabase.from('faturamento_setor_dia').select('*').limit(60),
         supabase.from('top_itens_7d').select('*').limit(15),
       ])
@@ -113,6 +113,9 @@ export default function AdminFaturamento() {
   const setoresHoje = porSetor.filter((s) => diaSP(s.dia) === hoje)
   const historico = dias.filter((d) => diaSP(d.dia) !== hoje).slice(0, 7)
   const totalSetor = setoresHoje.reduce((acc, s) => acc + s.faturamento, 0)
+  // Total geral da festa (todos os dias carregados), atualiza junto com o realtime.
+  const faturamentoTotal = dias.reduce((acc, d) => acc + d.faturamento, 0)
+  const pedidosTotal = dias.reduce((acc, d) => acc + d.pedidos_pagos, 0)
 
   return (
     <div className="min-h-screen bg-arraia-cream">
@@ -284,6 +287,22 @@ export default function AdminFaturamento() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {dias.length > 0 && (
+            <div className="mt-3 bg-arraia-brown-dark text-arraia-cream rounded-xl shadow-sm p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide opacity-80">
+                  Faturamento total (todos os dias)
+                </p>
+                <p className="text-[11px] opacity-70">
+                  {pedidosTotal} pedido(s) pago(s)
+                </p>
+              </div>
+              <p className="text-3xl font-extrabold">
+                {formatBRL(faturamentoTotal)}
+              </p>
             </div>
           )}
         </section>

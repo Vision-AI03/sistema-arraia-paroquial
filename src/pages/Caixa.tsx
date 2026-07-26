@@ -17,6 +17,30 @@ function horaSP(iso: string | null): string {
   })
 }
 
+// Início de ontem (00:00) no fuso de São Paulo, em ISO com offset -03:00.
+// Usado pra trazer todos os pedidos pagos de ontem + hoje na fila do caixa.
+function inicioOntemSP(): string {
+  const hojeStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+  }).format(new Date()) // 'YYYY-MM-DD'
+  const [y, m, d] = hojeStr.split('-').map(Number)
+  const ontem = new Date(Date.UTC(y, m - 1, d - 1))
+  const yy = ontem.getUTCFullYear()
+  const mm = String(ontem.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(ontem.getUTCDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}T00:00:00-03:00`
+}
+
+// Data (dd/mm) de um ISO no fuso de SP, pra agrupar as fichas por dia.
+function diaCurtoSP(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+  })
+}
+
 export default function Caixa() {
   const { perfil, sair } = useAuth()
   const [lista, setLista] = useState<PedidoCompleto[]>([])
@@ -36,8 +60,9 @@ export default function Caixa() {
             'id, total, status_pagto, mp_qr_code, observacao, criado_em, pago_em, codigo, nome_cliente, fichas_impressas_em'
           )
           .eq('status_pagto', 'pago')
+          .gte('pago_em', inicioOntemSP())
           .order('pago_em', { ascending: false })
-          .limit(60),
+          .limit(2000),
         supabase
           .from('setores')
           .select('id, nome, prefixo_senha, cor, ordem, ativo')
@@ -228,7 +253,7 @@ export default function Caixa() {
             <p className="text-center text-arraia-brown/60 bg-white rounded-xl shadow-sm p-6">
               {filtro
                 ? `Nenhum pedido pago com código ou nome contendo "${filtro}".`
-                : 'Nenhum pedido pago no momento. A fila atualiza sozinha quando um pagamento é confirmado.'}
+                : 'Nenhum pedido pago de ontem ou hoje. A fila atualiza sozinha quando um pagamento é confirmado.'}
             </p>
           )}
 
@@ -257,7 +282,8 @@ export default function Caixa() {
                         </p>
                       )}
                       <p className="text-xs text-arraia-brown/60 mt-1">
-                        pago às {horaSP(pc.pedido.pago_em)} •{' '}
+                        pago {diaCurtoSP(pc.pedido.pago_em)} às{' '}
+                        {horaSP(pc.pedido.pago_em)} •{' '}
                         {formatBRL(pc.pedido.total)}
                       </p>
                     </div>
